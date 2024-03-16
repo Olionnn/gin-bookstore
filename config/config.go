@@ -9,37 +9,40 @@ import (
 )
 
 func InitConfig() {
-
 	if _, err := os.Stat("config.yaml"); os.IsNotExist(err) {
-		fmt.Printf("config.yaml not found\n")
+		fmt.Println("config.yaml not found. Creating new config file...")
+
 		yml, ymlErr := os.Create("config.yaml")
 		if ymlErr != nil {
 			log.Fatal(ymlErr)
 		}
-
 		defer yml.Close()
+
+		viper.SetDefault("mysql.port", "3306")
+		viper.SetDefault("mysql.host", "localhost")
+		viper.SetDefault("mysql.user", "root")
+		viper.SetDefault("mysql.password", "121212")
+		viper.SetDefault("mysql.database", "bookstore")
+		viper.SetDefault("server.port", "8080")
+
+		if err := viper.WriteConfig(); err != nil {
+			fmt.Println("Error saving configuration:", err)
+			return
+		}
+
+		err := viper.ReadInConfig()
+		if err != nil {
+			log.Fatalf("Error reading config file, %s", err)
+		}
+
+		fmt.Println("New config.yaml file created.")
+	} else {
+		viper.SetConfigName("config")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath(".")
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalf("Error reading config file: %s", err)
+		}
+		fmt.Println("Using existing config.yaml file.")
 	}
-
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-
-	viper.SetDefault("mysql.port", "")
-	viper.SetDefault("mysql.host", "")
-	viper.SetDefault("mysql.user", "")
-	viper.SetDefault("mysql.password", "")
-	viper.SetDefault("mysql.database", "")
-
-	viper.SetDefault("server.port", "")
-
-	if err := viper.WriteConfig(); err != nil {
-		fmt.Println("Saving Configuration")
-		return
-	}
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error reading config file, %s", err)
-	}
-
 }
