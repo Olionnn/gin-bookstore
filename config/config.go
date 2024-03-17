@@ -23,16 +23,15 @@ func InitConfig() {
 		viper.SetDefault("mysql.user", "root")
 		viper.SetDefault("mysql.password", "121212")
 		viper.SetDefault("mysql.database", "bookstore")
+
+		viper.SetDefault("token.lifespan", "1")
+		viper.SetDefault("token.secret", "token_paling_aman_di_dunia")
+
 		viper.SetDefault("server.port", "8080")
 
-		if err := viper.WriteConfig(); err != nil {
+		if err := viper.WriteConfigAs("config.yaml"); err != nil {
 			fmt.Println("Error saving configuration:", err)
 			return
-		}
-
-		err := viper.ReadInConfig()
-		if err != nil {
-			log.Fatalf("Error reading config file, %s", err)
 		}
 
 		fmt.Println("New config.yaml file created.")
