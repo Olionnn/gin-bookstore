@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/Olionnn/gin-bookstore/config"
-	"github.com/Olionnn/gin-bookstore/utils/token"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,14 +27,15 @@ type Users struct {
 	Password string `gorm:"size:255"`
 }
 
-func (u *Users) SaveUser() (*Users, error) {
-	DB, errCN := config.ConnectGorm()
-	if errCN != nil {
-		return nil, errCN
-	}
-	defer DB.Close()
+type User struct {
+	ID       uint   `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
-	err := DB.Create(&u).Error
+func (u *Users) SaveUser() (*Users, error) {
+	err := config.DB.Create(&u).Error
 	if err != nil {
 		return &Users{}, err
 	}
@@ -54,32 +54,19 @@ func (u *Users) HashPassword() error {
 
 }
 
-func verifHashPass(password, hash string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-}
+// func verifHashPass(password, hash string) error {
+// 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+// }
 
-func LoginCheck(email, password string) (string, error) {
-	DB, errCN := config.ConnectGorm()
-	if errCN != nil {
-		return "", errCN
-	}
-	defer DB.Close()
-	u := Users{}
-
-	errGetUser := DB.Model(Users{}).Where("email = ?", email).Take(&u).Error
-	if errGetUser != nil {
-		return "", errGetUser
-	}
-
-	errVerif := verifHashPass(password, u.Password)
-	if errVerif != nil && errVerif == bcrypt.ErrMismatchedHashAndPassword {
-		return "", errVerif
-	}
-
-	token, errGenToken := token.GenerateToken(u.ID)
-	if errGenToken != nil {
-		return "", errGenToken
-	}
-
-	return token, nil
-}
+// func LoginCheck(email, password string) (string, error) {
+// 	var user User
+// 	config.DB.First(&user, "email = ?", email)
+// 	if user.ID == 0 {
+// 		return "", gorm.ErrRecordNotFound
+// 	}
+// 	errHash := verifHashPass(password, user.Password)
+// 	if errHash != nil && errHash == bcrypt.ErrMismatchedHashAndPassword {
+// 		return "", errHash
+// 	}
+// 	return email, nil
+// }

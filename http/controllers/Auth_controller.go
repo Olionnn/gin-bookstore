@@ -3,9 +3,14 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/Olionnn/gin-bookstore/config"
 	"github.com/Olionnn/gin-bookstore/http/models"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func Register(c *gin.Context) {
@@ -47,20 +52,39 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	Users := models.Users{}
+	var user models.User
+	config.DB.First(&user, "email = ?", input.Email)
 
-	Users.Email = input.Email
-	Users.Password = input.Password
-
-	token, errLogin := models.LoginCheck(Users.Email, Users.Password)
-	if errLogin != nil {
-		fmt.Println(errLogin)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": errLogin.Error()})
+	if user.ID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
 		return
 	}
 
+	errHash := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
+	if errHash != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password is incorrect"})
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":  user.ID,
+		"name": user.Username,
+		"exp":  time.Now().Add(time.Hour * 1).Unix(),
+	})
+
+	tokenString, errSignToken := token.SignedString([]byte(viper.GetString("token.secret")))
+	if errSignToken != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": errSignToken.Error()})
+		return
+	}
+
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("Authorization", tokenString, 3600 * 1, "", "", false, true)
+
+
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "login success",
-		"token":   token,
+		// "token":   tokenString,
 	})
 }
