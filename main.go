@@ -6,22 +6,23 @@ import (
 	"github.com/Olionnn/gin-bookstore/config"
 	"github.com/Olionnn/gin-bookstore/http/models"
 	"github.com/Olionnn/gin-bookstore/http/routes"
+	"github.com/spf13/viper"
 )
 
 func main() {
 	config.InitConfig()
-	DB, errDB := config.ConnectGorm()
+	errDB := config.ConnectGorm()
 	if errDB != nil {
 		panic(errDB)
 	}
 
-	errMigrate := DB.AutoMigrate(&models.Users{})
+	errMigrate := config.DB.AutoMigrate(&models.Users{})
 	if errMigrate != nil {
 		fmt.Println(errMigrate)
 	}
 
 	router := routes.InitRoutes()
-	router.Run(":8080")
+	router.Run(":" + viper.GetString("server.port"))
 
 	// defer db.Close()
 
