@@ -16,9 +16,12 @@ func main() {
 		panic(errDB)
 	}
 
-	errMigrate := config.DB.AutoMigrate(&models.Users{})
-	if errMigrate != nil {
-		fmt.Println(errMigrate)
+	if errMigrate := config.DB.AutoMigrate(&models.Users{}); errMigrate.Error != nil {
+		fmt.Println(errMigrate.Error)
+	}
+
+	if errMigrate := config.DB.AutoMigrate(&models.Books{}); errMigrate.Error != nil {
+		fmt.Println(errMigrate.Error)
 	}
 
 	router := routes.InitRoutes()
